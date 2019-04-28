@@ -1,5 +1,6 @@
 ########################
 # read data
+# RR2 project
 # author: sebastian daza
 ########################
 
@@ -23,9 +24,7 @@ table(df$sample, useNA='ifany')
 table(df$valid, useNA='ifany')
 df = df[valid == 1]
 
-dim(df)
-
-# define treatment
+# define treatme
 df[, treatment := GRUPO]
 df[, treatment := ifelse(treatment ==  'CONTROL', 0, 1)]
 table(df$treatment, df$GRUPO)
@@ -91,7 +90,6 @@ table(df[, .(sessions, nsessions)], useNA='ifany')
 summary(df[treatment==1, nsessions])
 
 # demographics
-
 df[, age := EDAD]
 table(df$age)
 
@@ -126,24 +124,6 @@ df = df[, .(id, treatment, pretest, posttest, survey, rcrime, rbehavior,
        rseverity, age, nsessions, days_pre_post, place, room,
        treatment_days, sample, valid)]
 
-# selection model
-m1 = glm(pretest ~ treatment + age + as.factor(rseverity) +
-    as.factor(rcrime) + as.factor(rbehavior), data = df, family=binomial())
-
-m1 = glm(pretest ~ treatment, data = df, family=binomial())
-summary(m1)
-
-summary(m1)
-
-m2 = glm(posttest ~ treatment + age + as.factor(rseverity) +
-    as.factor(rcrime) + as.factor(rbehavior), data = df, family=binomial())
-
-
-m2 = glm(posttest ~ treatment, data = df, family=binomial())
-
-
-summary(m2)
-
 # load outcome database
 cov = data.table(read_excel('data/BBDD habilidades cognitivas y caracterización.xlsx'))
 setnames(cov, 'FOLIO', 'id')
@@ -151,16 +131,22 @@ setnames(cov, 'PROMEDIO_ESCALAS_PRE', 'pre_score')
 setnames(cov, 'PROMEDIO_ESCALAS_POST', 'post_score')
 
 # compute scales
-# cov = assmis(cov, list(names(cov)[names(cov) %like% 'PRE[0-9]_|POST[0-9]_']), list(0))
+cov = assmis(cov, list(names(cov)[names(cov) %like% 'PRE[0-9]_|POST[0-9]_']), list(0))
+
+cov[, missing_pre := apply(.SD, 1, function(x) sum(is.na(x))), .SDcols = names(cov) %like% 'PRE[0-9]_']
+cov[, missing_post := apply(.SD, 1, function(x) sum(is.na(x))), .SDcols = names(cov) %like% 'POST[0-9]_']
+
+cov[, .(missing_pre, missing_post)]
+cov = cov[missing_pre < 5 &  missing_post < 5]
+
+length(unique(cov$id))
 
 # remove_from_post = c('POST4_2_10_2_rec', 'POST4_4_15', 'POST4_4_30')\
 # names(cov)[names(cov) %like% 'PRE[0-9]_|POST[0-9]_']
-#
 
 # cov[, pre_autocontrol := apply(.SD, 1, sum, na.rm=TRUE), .SDcols = names(cov) %like% 'PRE4_1_[1-7]_rec']
 # cov[, pre_autocontrol := apply(.SD, 1, sum, na.rm=TRUE), .SDcols = names(cov) %like% 'PRE4_1_[9]_rec']
 # cov[, post_score := apply(.SD, 1, sum, na.rm=TRUE), .SDcols = names(cov) %like% 'POST[0-9]_']
-
 
 prepost = cov[, .(id, pre_score, post_score)]
 df = merge(df, prepost, on = 'id')
@@ -169,24 +155,5 @@ df[, pre_post := ifelse(!is.na(post_score) & !is.na(pre_score), 1, 0)]
 df[, any_session := ifelse(nsessions > 0, 1, 0)]
 df[, sessions_11 := ifelse(nsessions > 10, 1, 0)]
 
-m1 = lm(post_score ~ treatment + pre_score, data = df)
-m2 = lm(post_score ~ any_session + pre_score, data = df)
-m3 = lm(post_score ~ sessions_11 + pre_score, data = df)
-m4 = lm(post_score ~ treatment * nsessions + pre_score, data = df)
-
-screenreg(list(m1, m2, m3, m4))
-
-o1 = lm(post_score ~ nsessions + pre_score, data = df)
-screenreg(o1)
-
-df[, diff := post_score - pre_score]
-df[, mean(diff, na.rm=TRUE), treatment]
-
-df[pre_post == 1, mean(pre_score, na.rm = TRUE), treatment]
-df[pre_post == 1, mean(post_score, na.rm = TRUE), treatment]
-
-df[, .(sum(is.na(pre_score)), .N), pretest]
-sum(!is.na(df$post_score))
-
-# instrumenta
-
+# save files
+saveRDS(df, 'output/data_cohort_1.rds')
