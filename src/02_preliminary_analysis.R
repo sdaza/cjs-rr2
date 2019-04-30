@@ -22,8 +22,12 @@ m4 = lm(post_score ~ treatment * nsessions + pre_score, data = df)
 
 screenreg(list(m1, m2, m3, m4))
 
+
+df[, .(N = sum(!is.na(diff)), diff =mean(diff, na.rm=TRUE)), treatment]
+df[pre_post == 1, .(pre = mean(pre_score, na.rm = TRUE),
+                    post = mean(post_score, na.rm = TRUE)), treatment]
+
 df[, diff := post_score - pre_score]
-df[, mean(diff, na.rm=TRUE), treatment]
 
 df[pre_post == 1, mean(pre_score, na.rm = TRUE), treatment]
 df[pre_post == 1, mean(post_score, na.rm = TRUE), treatment]
@@ -34,6 +38,10 @@ f2 <- bf(post_score ~ any_session + pre_score)
 IV_brm <- brm(f1 + f2, data = df, cores = 4)
 
 summary(IV_brm)
+
+# clustering
+m5 = brm(post_score ~ treatment + pre_score + (1|place) + (1|room),
+         data = df)
 
 # examining autocorrelation of scores
 df[, zpost_score := scale(post_score)]

@@ -94,8 +94,8 @@ df[, age := EDAD]
 table(df$age)
 
 setnames(df, 'FECHA INICIO', 'start_sentence')
-df[, start_sentence := as.Date(start_sentence)]
-df[, year_sentence := year(start_sentence)]
+# df[, start_sentence := as.Date(start_sentence)]
+# df[, year_sentence := year(start_sentence)]
 
 setnames(df, 'COMPROMISO DELICTUAL', 'severity')
 setnames(df, 'CONDUCTA', 'behavior')
@@ -125,10 +125,12 @@ df = df[, .(id, treatment, pretest, posttest, survey, rcrime, rbehavior,
        treatment_days, sample, valid)]
 
 # load outcome database
+
 cov = data.table(read_excel('data/BBDD habilidades cognitivas y caracterización.xlsx'))
 setnames(cov, 'FOLIO', 'id')
-setnames(cov, 'PROMEDIO_ESCALAS_PRE', 'pre_score')
-setnames(cov, 'PROMEDIO_ESCALAS_POST', 'post_score')
+setnames(cov, 'PROMEDIO_ESCALAS_PRE', 'pre_score_excel')
+setnames(cov, 'PROMEDIO_ESCALAS_POST', 'post_score_excel')
+
 
 # compute scales
 cov = assmis(cov, list(names(cov)[names(cov) %like% 'PRE[0-9]_|POST[0-9]_']), list(0))
@@ -136,24 +138,109 @@ cov = assmis(cov, list(names(cov)[names(cov) %like% 'PRE[0-9]_|POST[0-9]_']), li
 cov[, missing_pre := apply(.SD, 1, function(x) sum(is.na(x))), .SDcols = names(cov) %like% 'PRE[0-9]_']
 cov[, missing_post := apply(.SD, 1, function(x) sum(is.na(x))), .SDcols = names(cov) %like% 'POST[0-9]_']
 
-cov[, .(missing_pre, missing_post)]
-cov = cov[missing_pre < 5 &  missing_post < 5]
+table(cov[, .(missing_pre, missing_post)])
+# cov = cov[missing_pre < 5 &  missing_post < 5]
 
 length(unique(cov$id))
 
-# remove_from_post = c('POST4_2_10_2_rec', 'POST4_4_15', 'POST4_4_30')\
-# names(cov)[names(cov) %like% 'PRE[0-9]_|POST[0-9]_']
+# variables of scales
 
-# cov[, pre_autocontrol := apply(.SD, 1, sum, na.rm=TRUE), .SDcols = names(cov) %like% 'PRE4_1_[1-7]_rec']
-# cov[, pre_autocontrol := apply(.SD, 1, sum, na.rm=TRUE), .SDcols = names(cov) %like% 'PRE4_1_[9]_rec']
-# cov[, post_score := apply(.SD, 1, sum, na.rm=TRUE), .SDcols = names(cov) %like% 'POST[0-9]_']
+pre_items = list()
 
-prepost = cov[, .(id, pre_score, post_score)]
+pre_items[['pre_autocontrol']] = c("PRE4_1_1_rec","PRE4_1_2_rec","PRE4_1_3_rec",
+                                   "PRE4_1_4_rec","PRE4_1_5_rec", "PRE4_1_6_rec","PRE4_1_7_rec")
+
+pre_items[['pre_aggression']] = c("PRE4_1_9_rec", "PRE4_1_10_rec", "PRE4_1_11_rec",
+                    "PRE4_1_12_rec", "PRE4_1_13_rec", "PRE4_1_14_rec")
+
+pre_items[['pre_conflict']] = c("PRE4_2_1", "PRE4_2_2", "PRE4_2_3", "PRE4_2_4",
+                 "PRE4_2_5", "PRE4_2_6", "PRE4_2_7", "PRE4_2_8",
+                 "PRE4_2_9", "PRE4_2_10", "PRE4_2_11", "PRE4_2_12",
+                 "PRE4_2_13", "PRE4_2_14")
+
+pre_items[['pre_empathy']] = c("PRE4_3_1", "PRE4_3_2", "PRE4_3_3", "PRE4_3_4",
+                "PRE4_3_5", "PRE4_3_6", "PRE4_3_7", "PRE4_3_8",
+                "PRE4_3_9")
+
+pre_items[['pre_kindness']] = c("PRE4_3_10", "PRE4_3_11", "PRE4_3_12", "PRE4_3_13",
+                 "PRE4_3_14", "PRE4_3_15")
+
+pre_items[['pre_law']] = c("PRE4_4_1_rec", "PRE4_4_2_rec", "PRE4_4_3_rec",
+            "PRE4_4_4_rec", "PRE4_4_5_rec", "PRE4_4_6",
+            "PRE4_4_7_rec", "PRE4_4_8_rec", "PRE4_4_9_rec",
+            "PRE4_4_10_rec")
+
+pre_items[['pre_antisocial_1']] = c("PRE4_4_11_rec", "PRE4_4_12_rec", "PRE4_4_13_rec",
+                     "PRE4_4_14_rec", "PRE4_4_16_rec", "PRE4_4_17_rec",
+                     "PRE4_4_18_rec", "PRE4_4_19_rec", "PRE4_4_20_rec",
+                     "PRE4_4_21_rec")
+
+pre_items[['pre_antisocial_2']] = c("PRE4_4_22_rec", "PRE4_4_23_rec", "PRE4_4_24_rec",
+                     "PRE4_4_25_rec", "PRE4_4_26_rec", "PRE4_4_27_rec",
+                     "PRE4_4_28_rec", "PRE4_4_29_rec")
+
+
+post_items = list()
+
+post_items[['post_autocontrol']] = c("POST4_1_1_rec","POST4_1_2_rec","POST4_1_3_rec",
+                                   "POST4_1_4_rec","POST4_1_5_rec", "POST4_1_6_rec","POST4_1_7_rec")
+
+
+post_items[['post_aggression']] = c("POST4_1_9_rec", "POST4_1_10_rec", "POST4_1_11_rec",
+                    "POST4_1_12_rec", "POST4_1_13_rec", "POST4_1_14_rec")
+
+post_items[['post_conflict']] = c("POST4_2_1", "POST4_2_2", "POST4_2_3", "POST4_2_4",
+                 "POST4_2_5", "POST4_2_6", "POST4_2_7", "POST4_2_8",
+                 "POST4_2_9", "POST4_2_10", "POST4_2_11", "POST4_2_12",
+                 "POST4_2_13", "POST4_2_14")
+
+post_items[['post_empathy']] = c("POST4_3_1", "POST4_3_2", "POST4_3_3", "POST4_3_4",
+                "POST4_3_5", "POST4_3_6", "POST4_3_7", "POST4_3_8",
+                "POST4_3_9")
+
+post_items[['post_kindness']] = c("POST4_3_10", "POST4_3_11", "POST4_3_12", "POST4_3_13",
+                 "POST4_3_14", "POST4_3_15")
+
+post_items[['post_law']] = c("POST4_4_1_rec", "POST4_4_2_rec", "POST4_4_3_rec",
+            "POST4_4_4_rec", "POST4_4_5_rec", "POST4_4_6",
+            "POST4_4_7_rec", "POST4_4_8_rec", "POST4_4_9_rec",
+            "POST4_4_10_rec")
+
+post_items[['post_antisocial_1']] = c("POST4_4_11_rec", "POST4_4_12_rec", "POST4_4_13_rec",
+                     "POST4_4_14_rec", "POST4_4_16_rec", "POST4_4_17_rec",
+                     "POST4_4_18_rec", "POST4_4_19_rec", "POST4_4_20_rec",
+                     "POST4_4_21_rec")
+
+post_items[['post_antisocial_2']] = c("POST4_4_22_rec", "POST4_4_23_rec", "POST4_4_24_rec",
+                     "POST4_4_25_rec", "POST4_4_26_rec", "POST4_4_27_rec",
+                     "POST4_4_28_rec", "POST4_4_29_rec")
+
+for (i in 1:length(pre_items)) {
+cov[, names(pre_items)[i] := apply(.SD, 1, mean, na.rm = TRUE), .SDcols = pre_items[[i]]]
+cov[, names(post_items)[i] := apply(.SD, 1, mean, na.rm = TRUE), .SDcols = post_items[[i]]]
+}
+
+cov[, pre_score := apply(.SD, 1, mean, na.rm = TRUE), .SDcols = names(pre_items)]
+cov[, post_score := apply(.SD, 1, mean, na.rm = TRUE), .SDcols = names(post_items)]
+
+
+prepost = cov[!is.na(id), .(id, pre_score, pre_score_excel,  post_score, post_score_excel)]
+prepost[, pre_diff := pre_score - pre_score_excel]
+prepost[, post_diff := post_score - post_score_excel]
+
+
+table(prepost$pre_diff)
+table(prepost$post_diff)
 df = merge(df, prepost, on = 'id')
 df[, pre_post := ifelse(!is.na(post_score) & !is.na(pre_score), 1, 0)]
 
 df[, any_session := ifelse(nsessions > 0, 1, 0)]
 df[, sessions_11 := ifelse(nsessions > 10, 1, 0)]
+
+# random checks
+ids = unique(df$id)
+
+df[id == sample(ids, 1), .(id, pre_score, post_score)]
 
 # save files
 saveRDS(df, 'output/data_cohort_1.rds')
