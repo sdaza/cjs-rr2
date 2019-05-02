@@ -15,22 +15,19 @@ source('src/utils.R')
 df = readRDS('output/data_cohort_1.rds')
 
 # results analysis
-m1 = lm(post_score ~ treatment + pre_score, data = df)
-m2 = lm(post_score ~ any_session + pre_score, data = df)
-m3 = lm(post_score ~ sessions_11 + pre_score, data = df)
-m4 = lm(post_score ~ treatment * nsessions + pre_score, data = df)
+m1 = lm(post_total ~ treatment + pre_total, data = df)
+m2 = lm(post_total ~ any_session + pre_total, data = df)
+m3 = lm(post_total ~ sessions_11 + pre_total, data = df)
+m4 = lm(post_total ~ treatment * nsessions + pre_total, data = df)
 
 screenreg(list(m1, m2, m3, m4))
 
+df[, .(id, pre_total, post_total)]
 
-df[, .(N = sum(!is.na(diff)), diff =mean(diff, na.rm=TRUE)), treatment]
-df[pre_post == 1, .(pre = mean(pre_score, na.rm = TRUE),
-                    post = mean(post_score, na.rm = TRUE)), treatment]
+df[, diff := post_total - pre_total]
+df[, .(N = sum(!is.na(diff)), diff = mean(diff, na.rm=TRUE)), treatment]
 
-df[, diff := post_score - pre_score]
 
-df[pre_post == 1, mean(pre_score, na.rm = TRUE), treatment]
-df[pre_post == 1, mean(post_score, na.rm = TRUE), treatment]
 
 # instrumental variable
 f1 <- bf(any_session ~ treatment + treatment:pre_score, family('bernoulli'))
