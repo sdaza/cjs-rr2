@@ -40,3 +40,4 @@ doc/
 output/
 .DS_Store
 .gitignore
+.gitattributes
