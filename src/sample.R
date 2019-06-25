@@ -1,6 +1,10 @@
-# read sample frame
+#############################
+# define sample cohort 2
+# author: sebastian daza
+#############################
 
-# library(haven)
+
+# libraries
 library(readxl)
 library(data.table)
 library(lubridate)
@@ -9,6 +13,8 @@ library(ggplot2)
 
 # end of treatment
 end_treatment = ymd('2019-10-15')
+
+# read files
 
 # colina
 colina = data.table(read_xlsx("data/marco_cohort_2.xlsx", .name_repair = tolower,
@@ -21,7 +27,6 @@ colina[, diff_months := interval(end_treatment, exp_release_date) / months(1)]
 
 table(colina$exp_release_date)
 colina[, .(exp_release_date, diff_months)]
-
 colina[, group := 'colina']
 
 # valparaíso
@@ -36,10 +41,9 @@ valpo[, diff_months := interval(end_treatment, exp_release_date) / months(1)]
 
 table(valpo$exp_release_date)
 valpo[, .(exp_release_date, diff_months)]
-
 valpo[, group := 'valparaiso']
 
-# penitenciaría
+# penitenciaria
 pen = data.table(read_xlsx("data/marco_cohort_2.xlsx", .name_repair = tolower,
                  sheet = 3))
 
@@ -54,10 +58,9 @@ table(pen$exp_release_date)
 pen[, .(exp_release_date, diff_months)]
 
 summary(pen$diff_months)
-
 pen[, group := 'penitenciaria']
 
-# rename unidad column
+# rename unidad and age columns
 setnames(pen, c('destino_unidad', 'edad'), c('unit', 'age'))
 setnames(valpo, c('destino_unidad', 'edad'), c('unit', 'age'))
 setnames(colina, c('destino_unidad', 'edad'), c('unit', 'age'))
@@ -65,8 +68,8 @@ setnames(colina, c('destino_unidad', 'edad'), c('unit', 'age'))
 # create dataset with diff months
 vars = c('group', 'diff_months', 'age')
 dat = rbindlist(list(pen[, ..vars],
-               valpo[, ..vars],
-               colina[, ..vars]))
+                valpo[, ..vars],
+                colina[, ..vars]))
 
 ggplot(dat, aes(x=diff_months, group=as.factor(group),
                 color=as.factor(group))) +
