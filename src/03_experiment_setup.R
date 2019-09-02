@@ -16,8 +16,6 @@ table = function (...) base::table(..., useNA = 'ifany')
 dt = data.table(read_excel("data/BASE DE DATOS OFICIAL COHORTE 2.xlsx"))
 setnames(dt, names(dt), tolower(names(dt)))
 
-head(dt)
-
 # muestra
 setnames(dt, 'parte de la muestra', 'muestra')
 dt = dt[muestra == "SÍ"]
@@ -68,11 +66,12 @@ dt[, personas := ifelse(delito %like% "lesiones|amenaza", 1, 0)]
 table(dt$droga)
 table(dt$robo)
 table(dt$personas)
+
+dt[droga == 0 & robo == 0 & personas == 0, delito]
 dt[, otros := ifelse(droga == 0 & robo == 0 & personas == 0, 1, 0)]
 table(dt$otros)
-table(dt$droga)
-dt[droga == 0 & robo == 0 & personas == 0, delito]
 
+# categorización de indicadores
 # escala
 dt[, escala_grupos := cut(escala,
                              breaks = quantile(escala, probs = seq(0, 1, by = 1/4)),
