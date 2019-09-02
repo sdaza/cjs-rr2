@@ -71,41 +71,45 @@ dt[droga == 0 & robo == 0 & personas == 0, delito]
 dt[, otros := ifelse(droga == 0 & robo == 0 & personas == 0, 1, 0)]
 table(dt$otros)
 
-# categorización de indicadores
+# categorizacion de indicadores
 # escala
 dt[, escala_grupos := cut(escala,
-                             breaks = quantile(escala, probs = seq(0, 1, by = 1/4)),
-                             labels = 1:4, include.lowest = TRUE, right = FALSE)]
+                          breaks = quantile(escala, probs = seq(0, 1, by = 1/4)),
+                          labels = 1:4, include.lowest = TRUE, right = FALSE)]
 
 table(dt$escala_grupos)
 
 # tiempo en carcel
 dt[, tiempo_grupos := cut(log(tiempo_carcel),
-                           breaks = quantile(log(tiempo_carcel), probs = seq(0, 1, by = 1/3)),
-                           labels = 1:3, include.lowest = TRUE, right = FALSE)]
+                          breaks = quantile(log(tiempo_carcel), probs = seq(0, 1, by = 1/3)),
+                          labels = 1:3, include.lowest = TRUE, right = FALSE)]
 
 table(dt$tiempo_grupos)
 
 # edad
 dt[, edad_grupos := cut(log(edad),
-                         breaks = quantile(log(edad), probs = seq(0, 1, by = 1/4)),
-                         labels = 1:4, include.lowest = TRUE, right = FALSE)]
+                        breaks = quantile(log(edad), probs = seq(0, 1, by = 1/4)),
+                        labels = 1:4, include.lowest = TRUE, right = FALSE)]
 
 table(dt$edad_grupos)
 
-
 # blocking
+
 dt[, block_id := paste0(edad_grupos, " ::: ", escala_grupos, " ::: ", tiempo_grupos)]
+
+# numero de celda con mas de un caso
 table(table(dt$block_id) > 1)
 
-# set a seed for reproducability
+# seed para reproducir
 set.seed(231)
-# set.seed(234)
 
+# asignar aleatoriamente en base a blocks
 Z = block_ra(blocks = dt$block_id,
              conditions = c("control", "tratamiento"))
 
 dt[, tratamiento := Z]
+
+# asignacion aleatorio sin blocking
 dt[, tratamiento_complete_ra := complete_ra(N = nrow(dt))]
 
 # evaluar balance
@@ -113,20 +117,21 @@ tab1 = CreateTableOne(vars = c("edad", "escala",
                               "tiempo_carcel",
                               "droga", "robo", "personas", "otros",
                               "conducta", "compromiso_delictual"),
-                     strata = "tratamiento_complete_ra",
-                     data = dt,
-                     test=FALSE)
+                      strata = "tratamiento_complete_ra",
+                      data = dt,
+                      test=FALSE)
 print(tab1, smd = TRUE)
 
 tab2 = CreateTableOne(vars = c("edad", "escala",
                               "tiempo_carcel",
                               "droga", "robo", "personas", "otros",
                               "conducta", "compromiso_delictual"),
-                     strata = "tratamiento",
-                     data = dt,
-                     test=FALSE)
+                      strata = "tratamiento",
+                      data = dt,
+                      test=FALSE)
 print(tab2, smd = TRUE)
 
+# evaluar casos sin balance
 print(addmargins(table(ExtractSmd(tab1) > 0.1)))
 print(addmargins(table(ExtractSmd(tab2) > 0.1)))
 
@@ -135,5 +140,7 @@ seleccion_dt = dt[, .(folio, muestra, unidad, edad, escala, tiempo_carcel, droga
                       tratamiento, conducta, compromiso_delictual)]
 
 fwrite(seleccion_dt, "output/diseno_experimental_penitenciaria.csv")
+
+table(dt$tratamiento)
 
 
