@@ -83,12 +83,14 @@ ggplot(dat, aes(x=age, group=as.factor(group),
 
 
 # sample penitenciaria
+nrow(pen)
+
 pen[, N := .N, unit]
-pen[, sample_size := round(N * .70)]
+pen[, sample_size := round(N * .60)]
 
 pen[, sample(.N, sample_size), unit]
 
-set.seed(06242019)
+set.seed(06252019)
 ss = pen[,.SD[sample(.N, sample_size)], unit]
 
 vars = c('rut', 'age', 'group', 'unit', 'diff_months', 'exp_release_date')
@@ -113,6 +115,8 @@ table(fss[, .N, rut]$N)
 
 fss[, .N, .(group, unit)]
 pen[, .N, unit]
+
+table(fss$group)
 
 # export sample
 fwrite(fss, row.names = FALSE, file = 'output/sample_cohort_2.csv')
