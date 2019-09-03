@@ -138,6 +138,10 @@ print(addmargins(table(ExtractSmd(tab2) > 0.1)))
 print(tab1, smd = TRUE)
 print(tab2, smd = TRUE)
 
+# invertir asignacion de tratamiento
+dt[, tratamiento := ifelse(tratamiento == 'control', 'tratamiento', 'control')]
+table(dt$tratamiento)
+
 tab2 = CreateTableOne(vars = c("edad", "escala",
                               "tiempo_carcel",
                               "droga", "robo", "personas", "otros",
@@ -148,9 +152,6 @@ tab2 = CreateTableOne(vars = c("edad", "escala",
 
 print(tab2, smd = TRUE)
 
-# invertir asignacion de tratamiento
-dt[, tratamiento := ifelse(tratamiento == 'control', 'tratamiento', 'control')]
-table(dt$tratamiento)
 
 # exportar datos
 seleccion_dt = dt[, .(folio, muestra, unidad, edad, escala, tiempo_carcel, droga, robo, personas, otros,
