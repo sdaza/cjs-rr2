@@ -100,7 +100,7 @@ dt[, block_id := paste0(edad_grupos, " ::: ", escala_grupos, " ::: ", tiempo_gru
 table(table(dt$block_id) > 1)
 
 # seed para reproducir
-set.seed(231)
+set.seed(201)
 
 # asignar aleatoriamente en base a blocks
 Z = block_ra(blocks = dt$block_id,
@@ -137,6 +137,20 @@ print(addmargins(table(ExtractSmd(tab2) > 0.1)))
 # imprimir tablas
 print(tab1, smd = TRUE)
 print(tab2, smd = TRUE)
+
+tab2 = CreateTableOne(vars = c("edad", "escala",
+                              "tiempo_carcel",
+                              "droga", "robo", "personas", "otros",
+                              "conducta", "compromiso_delictual"),
+                      strata = "tratamiento",
+                      data = dt,
+                      test=FALSE)
+
+print(tab2, smd = TRUE)
+
+# invertir asignacion de tratamiento
+dt[, tratamiento := ifelse(tratamiento == 'control', 'tratamiento', 'control')]
+table(dt$tratamiento)
 
 # exportar datos
 seleccion_dt = dt[, .(folio, muestra, unidad, edad, escala, tiempo_carcel, droga, robo, personas, otros,
