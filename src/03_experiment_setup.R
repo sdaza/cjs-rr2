@@ -94,7 +94,6 @@ dt[, edad_grupos := cut(log(edad),
 table(dt$edad_grupos)
 
 # blocking
-
 dt[, block_id := paste0(edad_grupos, " ::: ", escala_grupos, " ::: ", tiempo_grupos)]
 
 # numero de celda con mas de un caso
@@ -120,7 +119,7 @@ tab1 = CreateTableOne(vars = c("edad", "escala",
                       strata = "tratamiento_complete_ra",
                       data = dt,
                       test=FALSE)
-print(tab1, smd = TRUE)
+
 
 tab2 = CreateTableOne(vars = c("edad", "escala",
                               "tiempo_carcel",
@@ -129,11 +128,15 @@ tab2 = CreateTableOne(vars = c("edad", "escala",
                       strata = "tratamiento",
                       data = dt,
                       test=FALSE)
-print(tab2, smd = TRUE)
 
-# evaluar casos sin balance
+
+# numero de indicadores sin balance
 print(addmargins(table(ExtractSmd(tab1) > 0.1)))
 print(addmargins(table(ExtractSmd(tab2) > 0.1)))
+
+# imprimir tablas
+print(tab1, smd = TRUE)
+print(tab2, smd = TRUE)
 
 # exportar datos
 seleccion_dt = dt[, .(folio, muestra, unidad, edad, escala, tiempo_carcel, droga, robo, personas, otros,
